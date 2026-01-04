@@ -16,10 +16,9 @@ MyST role: {name}`content`
 MyST directive:
 
 ```{name} arguments
----
-option1: 1
-option2: hello
----
+:option1: 1
+:option2: hello
+
 Content
 ```
 

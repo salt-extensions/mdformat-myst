@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, MutableMapping, Sequence
-import io
 
 from markdown_it import MarkdownIt
 import mdformat
@@ -123,25 +122,12 @@ def format_directive_content(
         return raw_content
     formatted = ""
     if unformatted_yaml is not None:
-        dump_stream = io.StringIO()
-        try:
-            parsed = yaml.load(unformatted_yaml)
-            yaml.dump(parsed, stream=dump_stream)
-        except ruamel.yaml.YAMLError:
+        options_block = _format_options(unformatted_yaml)
+        if options_block is None:
             LOGGER.warning("Invalid YAML in MyST directive options.")
             return raw_content
-        formatted_yaml = dump_stream.getvalue()
-
-        # Remove the YAML closing tag if added by `ruamel.yaml`
-        if formatted_yaml.endswith("\n...\n"):
-            formatted_yaml = formatted_yaml[:-4]
-
-        # Convert empty YAML to most concise form
-        if formatted_yaml == "null\n":
-            formatted_yaml = ""
-
-        formatted += "---\n" + formatted_yaml + "---\n"
-    if content:
+        formatted += options_block
+    if content.strip():
         if markdown_body:
             body = _format_markdown_body(content, context)
             if unformatted_yaml is None and _would_parse_as_options(body):
@@ -151,7 +137,32 @@ def format_directive_content(
             formatted += body
         else:
             formatted += content + "\n"
+    if not formatted:
+        return ""
+    # In both the content-containing case (in which case we might have many terminal
+    # newlines in the content) and the options-only case (in which case, we have
+    # inserted two newlines above to separate the options from the non-existent content)
+    # we want to ensure we end in _exactly_ one newline.
+    formatted = formatted.rstrip("\n") + "\n"
+    # Unless the last thing in the content is a colon-fence, which for consistency we
+    # always add padding to.
+    if formatted.endswith(":::\n"):
+        formatted += "\n"
     return formatted
+
+
+def _format_options(unformatted_yaml: str) -> str | None:
+    """Format directive options using the colon syntax.
+
+    Returns None if the options are not valid YAML.
+    """
+    try:
+        parsed = yaml.load(unformatted_yaml)
+    except ruamel.yaml.YAMLError:
+        return None
+    if not parsed:
+        return ""
+    return "\n".join([f":{k}: {v}" for k, v in parsed.items()]) + "\n\n"
 
 
 def _would_parse_as_options(body: str) -> bool:
@@ -174,18 +185,14 @@ def _format_markdown_body(content: str, context: RenderContext) -> str:
         for name, plugin in mdformat.plugins.PARSER_EXTENSIONS.items()
         if plugin in active_plugins
     ]
-    formatted = mdformat.text(
+    # Trailing newlines (and padding after a trailing nested colon
+    # fence) are normalized by `format_directive_content`.
+    return mdformat.text(
         content,
         options=context.options.get("mdformat", {}),
         extensions=extension_names,
         codeformatters=list(context.options.get("codeformatters", {})),
     )
-    formatted = formatted.rstrip("\n") + "\n"
-    # Keep a blank line between a trailing nested colon fence and the
-    # closing fence of this directive.
-    if formatted.endswith(":::\n"):
-        formatted += "\n"
-    return formatted
 
 
 def parse_opts_and_content(raw_content: str) -> tuple[str | None, str]:
