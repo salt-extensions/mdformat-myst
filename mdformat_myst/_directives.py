@@ -5,6 +5,7 @@ import io
 from typing import Any
 
 from markdown_it import MarkdownIt
+from markdown_it.token import Token
 import mdformat
 import mdformat.plugins
 from mdformat.renderer import LOGGER, RenderContext, RenderTreeNode
@@ -31,6 +32,12 @@ _NON_MARKDOWN_DIRECTIVES = frozenset(
     }
 )
 
+# Parser used to find reference-style links inside MyST directive bodies.
+# Directives are tokenized as fences, so mdformat would otherwise treat those
+# links as unused and drop their definitions.
+_DIRECTIVE_REF_PARSER = MarkdownIt("commonmark")
+_DIRECTIVE_REF_PARSER.options["store_labels"] = True
+
 
 def longest_consecutive_sequence(seq: str, char: str) -> int:
     """Return length of the longest consecutive sequence of `char` characters
@@ -54,7 +61,8 @@ def fence(node: RenderTreeNode, context: RenderContext) -> str:
     Originally copied from upstream `mdformat` core. Changes compared to
     upstream:
     - call `format_directive_content` when a directive is detected
-      (instead of treating the contents as code in that case)
+      (instead of treating the contents as code in that case), and
+      record link references used only inside the directive body
     - render `colon_fence` nodes with `:` as the fence character (and
       use a heuristic to ensure good spacing when recombining those).
     """
@@ -93,6 +101,7 @@ def _fence_body(
     unformatted_body = node.content
     is_directive = lang.startswith("{") and lang.endswith("}")
     if is_directive:
+        mark_refs_used_in_directive(unformatted_body, context)
         # Only colon fenced directive bodies are Markdown. Backtick
         # fences signal literal content, as do a number of well-known
         # directives whose body is code, RST or similar.
@@ -116,6 +125,46 @@ def _fence_body(
                 f"(line {node.map[0] + 1} before formatting)"
             )
     return unformatted_body
+
+
+def _is_myst_directive(info_str: str) -> bool:
+    lang = info_str.split(maxsplit=1)[0] if info_str.strip() else ""
+    return lang.startswith("{") and lang.endswith("}")
+
+
+def mark_refs_used_in_directive(raw_content: str, context: RenderContext) -> None:
+    """Keep link/image refs that are only referenced inside a directive."""
+    references = context.env.get("references")
+    used_refs = context.env.get("used_refs")
+    if not raw_content or not references or used_refs is None:
+        return
+    _collect_refs_from_markdown(raw_content, references, used_refs)
+
+
+def _collect_refs_from_markdown(
+    content: str,
+    references: Mapping[str, object],
+    used_refs: set[str],
+) -> None:
+    env: dict = {"references": dict(references)}
+    tokens = _DIRECTIVE_REF_PARSER.parse(content, env)
+    _collect_ref_labels(tokens, references, used_refs)
+
+
+def _collect_ref_labels(
+    tokens: Sequence[Token],
+    references: Mapping[str, object],
+    used_refs: set[str],
+) -> None:
+    for token in tokens:
+        if token.type in ("link_open", "image"):
+            label = token.meta.get("label") if token.meta else None
+            if isinstance(label, str) and label in references:
+                used_refs.add(label)
+        elif token.type == "fence" and token.content and _is_myst_directive(token.info):
+            _collect_refs_from_markdown(token.content, references, used_refs)
+        if token.children:
+            _collect_ref_labels(token.children, references, used_refs)
 
 
 def format_directive_content(
