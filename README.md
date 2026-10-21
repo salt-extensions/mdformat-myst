@@ -26,6 +26,8 @@ making the tool able to format the following syntax extensions:
 - [front matter](https://myst-parser.readthedocs.io/en/latest/using/syntax.html#extended-block-tokens)
 - [footnotes](https://pandoc.org/MANUAL.html#footnotes)
 
+**Note that this is a fork with functionality currently not found upstream:**
+
 In addition, the following optional MyST syntax extensions are supported and
 enabled by default:
 
