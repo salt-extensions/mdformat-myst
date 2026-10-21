@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import re
 import textwrap
 
@@ -10,30 +11,39 @@ from mdit_py_plugins.dollarmath import dollarmath_plugin
 from mdit_py_plugins.myst_blocks import myst_block_plugin
 from mdit_py_plugins.myst_role import myst_role_plugin
 
+from mdformat_myst._conf import SYNTAX_TOGGLES
 from mdformat_myst._directives import fence, render_fence_html
 
 _TARGET_PATTERN = re.compile(r"^\s*\(.+\)=\s*$")
 _ROLE_NAME_PATTERN = re.compile(r"({[a-zA-Z0-9_\-+:]+})")
 
 
+def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
+    for name in SYNTAX_TOGGLES:
+        group.add_argument(
+            f"--myst-no-{name.replace('_', '-')}",
+            action="store_const",
+            const=False,
+            # `None` means "not set on the CLI": fall back to the
+            # `[plugin.myst]` TOML section or the default (enabled).
+            default=None,
+            dest=name,
+            help=f"disable the MyST '{name}' syntax extension",
+        )
+
+
+def _activate_mdformat_plugin(mdit: MarkdownIt, plugin_name: str) -> None:
+    plugin = mdformat.plugins.PARSER_EXTENSIONS[plugin_name]
+    if plugin not in mdit.options["parser_extension"]:
+        mdit.options["parser_extension"].append(plugin)
+        plugin.update_mdit(mdit)
+
+
 def update_mdit(mdit: MarkdownIt) -> None:
-    # Enable mdformat-tables plugin
-    tables_plugin = mdformat.plugins.PARSER_EXTENSIONS["tables"]
-    if tables_plugin not in mdit.options["parser_extension"]:
-        mdit.options["parser_extension"].append(tables_plugin)
-        tables_plugin.update_mdit(mdit)
-
-    # Enable mdformat-front-matters plugin
-    front_matters_plugin = mdformat.plugins.PARSER_EXTENSIONS["front_matters"]
-    if front_matters_plugin not in mdit.options["parser_extension"]:
-        mdit.options["parser_extension"].append(front_matters_plugin)
-        front_matters_plugin.update_mdit(mdit)
-
-    # Enable mdformat-footnote plugin
-    footnote_plugin = mdformat.plugins.PARSER_EXTENSIONS["footnote"]
-    if footnote_plugin not in mdit.options["parser_extension"]:
-        mdit.options["parser_extension"].append(footnote_plugin)
-        footnote_plugin.update_mdit(mdit)
+    # Enable the mdformat-tables, mdformat-front-matters and
+    # mdformat-footnote plugins
+    for plugin_name in ("tables", "front_matters", "footnote"):
+        _activate_mdformat_plugin(mdit, plugin_name)
 
     # Enable MyST role markdown-it extension
     mdit.use(myst_role_plugin)
