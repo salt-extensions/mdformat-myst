@@ -36,6 +36,27 @@ $$
 a=1
 $$
 
+colon fenced directive:
+
+:::{note}
+A note with *formatted* Markdown content.
+:::
+
+definition list:
+
+Term 1
+: Definition 1
+
+task list:
+
+- [ ] not done
+- [x] done
+
+field list:
+
+:author: Jane Doe
+:orphan:
+
 Here is a footnote reference.[^a]
 
 [^a]: First paragraph with
