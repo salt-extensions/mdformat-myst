@@ -5,6 +5,7 @@ import re
 import textwrap
 
 from markdown_it import MarkdownIt
+from markdown_it.rules_core import StateCore
 import mdformat.plugins
 from mdformat.renderer import RenderContext, RenderTreeNode
 from mdit_py_plugins.colon_fence import colon_fence_plugin
@@ -54,6 +55,20 @@ def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
     )
 
 
+def _disguise_colon_fences(state: StateCore) -> None:
+    disguised = []
+    for token in state.tokens:
+        if token.type == "colon_fence":
+            token.type = "fence"
+            disguised.append(token)
+    state.env["myst_disguised_colon_fences"] = disguised
+
+
+def _undisguise_colon_fences(state: StateCore) -> None:
+    for token in state.env.pop("myst_disguised_colon_fences", []):
+        token.type = "colon_fence"
+
+
 def _activate_mdformat_plugin(mdit: MarkdownIt, plugin_name: str) -> None:
     plugin = mdformat.plugins.PARSER_EXTENSIONS[plugin_name]
     if plugin not in mdit.options["parser_extension"]:
@@ -92,6 +107,18 @@ def update_mdit(mdit: MarkdownIt) -> None:
         # Must come after `mdit.use` so it overrides the HTML render
         # rule registered by the plugin (see the validation trick below).
         mdit.add_render_rule("colon_fence", render_fence_html)
+        # mdformat-footnote's reorder rule keeps footnote definitions
+        # that are referenced only inside fences, but it scans `fence`
+        # tokens only. Disguise colon fences as fences while it runs so
+        # that it does not drop their footnote definitions.
+        mdit.core.ruler.before(
+            "reorder_footnotes", "myst_disguise_colon_fences", _disguise_colon_fences
+        )
+        mdit.core.ruler.after(
+            "reorder_footnotes",
+            "myst_undisguise_colon_fences",
+            _undisguise_colon_fences,
+        )
 
     # Trick `mdformat`s AST validation by removing HTML rendering of code
     # blocks and fences. Directives are parsed as code fences and we

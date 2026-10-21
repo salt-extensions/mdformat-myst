@@ -983,3 +983,55 @@ Hello [mdformat][myref]
 
 [myref]: https://example.com
 .
+
+Footnote used only in colon fenced directive
+.
+:::{note}
+Hello[^fn]
+:::
+
+[^fn]: a footnote
+.
+:::{note}
+Hello[^fn]
+:::
+
+[^fn]: a footnote
+.
+
+Link reference used only in colon fenced directive
+.
+:::{note}
+Hello [mdformat][myref]
+:::
+
+[myref]: https://example.com
+[unused]: https://unused.example
+.
+:::{note}
+Hello [mdformat][myref]
+:::
+
+[myref]: https://example.com
+.
+
+Link reference used only in nested colon fenced directive
+.
+::::{admonition} Outer
+:::{note}
+See [docs][ref1]
+:::
+::::
+
+[ref1]: https://example.com
+.
+::::{admonition} Outer
+
+:::{note}
+See [docs][ref1]
+:::
+
+::::
+
+[ref1]: https://example.com
+.
