@@ -46,6 +46,10 @@ def update_mdit(mdit: MarkdownIt) -> None:
     for plugin_name in ("tables", "front_matters", "footnote"):
         _activate_mdformat_plugin(mdit, plugin_name)
 
+    # Enable the mdformat-deflist plugin
+    if syntax_enabled(mdit.options, "deflist"):
+        _activate_mdformat_plugin(mdit, "deflist")
+
     # Enable MyST role markdown-it extension
     mdit.use(myst_role_plugin)
 

@@ -718,3 +718,65 @@ foo
 foo
 \::: bar
 .
+
+Definition list, tight
+.
+Term 1
+: Definition 1
+.
+Term 1
+: Definition 1
+.
+
+Definition list, multiple definitions and terms
+.
+Term 1
+: Definition 1a
+: Definition 1b
+
+Term 2
+: Definition 2
+.
+Term 1
+: Definition 1a
+: Definition 1b
+
+Term 2
+: Definition 2
+.
+
+Definition list, loose with multi-paragraph definition
+.
+Term
+: First paragraph.
+
+  Second paragraph.
+.
+Term
+
+: First paragraph.
+
+  Second paragraph.
+.
+
+Definition list inside colon fenced directive
+.
+:::{note}
+Term
+: Definition
+:::
+.
+:::{note}
+Term
+: Definition
+:::
+.
+
+Paragraph line starting with a colon is escaped
+.
+foo
+\: not a definition
+.
+foo
+\: not a definition
+.

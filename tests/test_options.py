@@ -8,8 +8,13 @@ COLON_FENCE_INPUT = ":::{note}\nA note.\n:::\n"
 # syntax and must be preserved as is.
 COLON_FENCE_ENABLED_OUTPUT = COLON_FENCE_INPUT
 # With `colon_fence` disabled the input is a plain paragraph whose
-# role-like `{note}` part gets escaped (the pre-toggle behavior).
-COLON_FENCE_DISABLED_OUTPUT = ":::\\{note}\nA note.\n:::\n"
+# role-like `{note}` part gets escaped (the pre-toggle behavior), and
+# whose colon-leading lines are escaped by mdformat-deflist (activated
+# by this plugin unless also disabled).
+COLON_FENCE_DISABLED_OUTPUT = "\\:::\\{note}\nA note.\n\\:::\n"
+# With both `colon_fence` and `deflist` disabled, pre-toggle behavior
+# is fully restored.
+ALL_DISABLED_OUTPUT = ":::\\{note}\nA note.\n:::\n"
 
 
 def test_toggle_default_enabled():
@@ -30,6 +35,17 @@ def test_toggle_disabled_via_api():
     )
 
 
+def test_all_toggles_disabled_via_api():
+    assert (
+        mdformat.text(
+            COLON_FENCE_INPUT,
+            extensions={"myst"},
+            options={"plugin": {"myst": {"colon_fence": False, "deflist": False}}},
+        )
+        == ALL_DISABLED_OUTPUT
+    )
+
+
 def test_toggle_disabled_via_cli_flag(tmp_path):
     file_path = tmp_path / "test_markdown.md"
     file_path.write_text(COLON_FENCE_INPUT)
@@ -47,7 +63,7 @@ def test_toggle_disabled_via_toml(tmp_path):
 
 def test_cli_flag_overrides_toml(tmp_path):
     """A CLI disable flag wins; an absent flag defers to TOML."""
-    (tmp_path / ".mdformat.toml").write_text("[plugin.myst]\ntasklist = false\n")
+    (tmp_path / ".mdformat.toml").write_text("[plugin.myst]\ndeflist = false\n")
     file_path = tmp_path / "test_markdown.md"
     file_path.write_text(COLON_FENCE_INPUT)
     assert mdformat._cli.run(["--myst-no-colon-fence", str(file_path)]) == 0
