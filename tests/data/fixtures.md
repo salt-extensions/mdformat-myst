@@ -1035,3 +1035,33 @@ See [docs][ref1]
 
 [ref1]: https://example.com
 .
+
+Reference link with code span in label inside colon fenced directive
+.
+:::{note}
+Use the [`--trust` flag][trust-flag] to allow this.
+:::
+
+[trust-flag]: https://example.com/docs#trust
+.
+:::{note}
+Use the [`--trust` flag][trust-flag] to allow this.
+:::
+
+[trust-flag]: https://example.com/docs#trust
+.
+
+Reference definition inside colon fenced directive moves to document end
+.
+:::{note}
+See [docs][inner-ref].
+
+[inner-ref]: https://inner.example
+:::
+.
+:::{note}
+See [docs][inner-ref].
+:::
+
+[inner-ref]: https://inner.example
+.

@@ -7,8 +7,9 @@ from typing import Any
 from markdown_it import MarkdownIt
 from markdown_it.token import Token
 import mdformat
+from mdformat._util import build_mdit
 import mdformat.plugins
-from mdformat.renderer import LOGGER, RenderContext, RenderTreeNode
+from mdformat.renderer import LOGGER, MDRenderer, RenderContext, RenderTreeNode
 import ruamel.yaml
 
 from mdformat_myst._conf import directive_options_style
@@ -271,23 +272,54 @@ def _would_parse_as_options(body: str) -> bool:
 
 
 def _format_markdown_body(content: str, context: RenderContext) -> str:
-    """Recursively format directive content as Markdown."""
+    """Recursively format directive content as Markdown.
+
+    The nested render is seeded with the outer document's link reference
+    definitions so that reference links keep working inside directive
+    bodies. References used (or defined) in the body are merged into the
+    outer document's environment, whose finalization emits each
+    definition once, at the end of the document.
+
+    Trailing newlines (and padding after a trailing nested colon fence)
+    are normalized by `format_directive_content`.
+    """
     active_plugins = context.options.get("parser_extension", [])
     # Resolve plugin modules back to their string names, as required by
-    # `mdformat.text`.
+    # `build_mdit`.
     extension_names = [
         name
         for name, plugin in mdformat.plugins.PARSER_EXTENSIONS.items()
         if plugin in active_plugins
     ]
-    # Trailing newlines (and padding after a trailing nested colon
-    # fence) are normalized by `format_directive_content`.
-    return mdformat.text(
-        content,
-        options=context.options.get("mdformat", {}),
+    mdformat_opts = context.options.get("mdformat", {})
+    mdit = build_mdit(
+        MDRenderer,
+        mdformat_opts=mdformat_opts,
         extensions=extension_names,
-        codeformatters=list(context.options.get("codeformatters", {})),
+        codeformatters=set(context.options.get("codeformatters", {})),
     )
+
+    renderer = mdit.renderer
+    assert isinstance(renderer, MDRenderer)
+
+    def render_pass(src: str, references: Mapping[str, Any]) -> tuple[str, dict]:
+        env: dict = {"references": dict(references)}
+        tokens = mdit.parse(src, env)
+        text = renderer.render(tokens, mdit.options, env, finalize=False)
+        return text, env
+
+    formatted, env = render_pass(content, context.env.get("references", {}))
+    # Mimic `mdformat.text`: if word wrap is changed, add a second
+    # rendering pass to achieve stable formatting.
+    if mdformat_opts.get("wrap", "keep") != "keep":
+        formatted, env = render_pass(formatted, env["references"])
+
+    # Merge references used or defined in the body into the outer document.
+    outer_references = context.env.setdefault("references", {})
+    for label, ref in env["references"].items():
+        outer_references.setdefault(label, ref)
+    context.env.setdefault("used_refs", set()).update(env["used_refs"])
+    return formatted
 
 
 def parse_opts_and_content(raw_content: str) -> tuple[str | None, str]:
