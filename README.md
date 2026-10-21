@@ -40,6 +40,10 @@ enabled by default:
 - [`fieldlist`](https://myst-parser.readthedocs.io/en/latest/syntax/optional.html#field-lists) —
   field lists (`:name: value`).
 
+Directive options are formatted using the modern `:key: value` colon syntax by
+default. Options that cannot be represented that way (nested or multi-line
+values) keep the `---`-delimited YAML block style.
+
 ## Install
 
 ```sh
@@ -69,6 +73,17 @@ colon_fence = false
 deflist = false
 tasklist = false
 fieldlist = false
+```
+
+### Directive option style
+
+To keep formatting directive options as `---`-delimited YAML blocks instead of
+the default colon syntax, use `mdformat --myst-directive-options yaml`, or in
+`.mdformat.toml`:
+
+```toml
+[plugin.myst]
+directive_options = "yaml"
 ```
 
 Note that mdformat's CLI enables *all installed* plugins by default, and

@@ -43,6 +43,15 @@ def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
             dest=name,
             help=f"disable the MyST '{name}' syntax extension",
         )
+    group.add_argument(
+        "--myst-directive-options",
+        choices=("colon", "yaml"),
+        # `None` means "not set on the CLI": fall back to the
+        # `[plugin.myst]` TOML section or the default ("colon").
+        default=None,
+        dest="directive_options",
+        help="style for formatting MyST directive options (default: colon)",
+    )
 
 
 def _activate_mdformat_plugin(mdit: MarkdownIt, plugin_name: str) -> None:

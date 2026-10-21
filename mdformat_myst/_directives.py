@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, MutableMapping, Sequence
+import io
+from typing import Any
 
 from markdown_it import MarkdownIt
 import mdformat
 import mdformat.plugins
 from mdformat.renderer import LOGGER, RenderContext, RenderTreeNode
 import ruamel.yaml
+
+from mdformat_myst._conf import directive_options_style
 
 yaml = ruamel.yaml.YAML()
 yaml.indent(mapping=2, sequence=4, offset=2)
@@ -122,7 +126,7 @@ def format_directive_content(
         return raw_content
     formatted = ""
     if unformatted_yaml is not None:
-        options_block = _format_options(unformatted_yaml)
+        options_block = _format_options(unformatted_yaml, context)
         if options_block is None:
             LOGGER.warning("Invalid YAML in MyST directive options.")
             return raw_content
@@ -145,24 +149,66 @@ def format_directive_content(
     # we want to ensure we end in _exactly_ one newline.
     formatted = formatted.rstrip("\n") + "\n"
     # Unless the last thing in the content is a colon-fence, which for consistency we
-    # always add padding to.
-    if formatted.endswith(":::\n"):
+    # always add padding to. Literal (non-Markdown) bodies must stay verbatim.
+    if markdown_body and formatted.endswith(":::\n"):
         formatted += "\n"
     return formatted
 
 
-def _format_options(unformatted_yaml: str) -> str | None:
-    """Format directive options using the colon syntax.
+def _format_options(unformatted_yaml: str, context: RenderContext) -> str | None:
+    """Format directive options, using the colon syntax by default.
 
+    The "yaml" style (a `---`-delimited YAML block) is used when
+    configured via the `directive_options` plugin option, or as a
+    fallback when the options cannot be represented in colon syntax.
     Returns None if the options are not valid YAML.
     """
     try:
         parsed = yaml.load(unformatted_yaml)
+        dump_stream = io.StringIO()
+        yaml.dump(parsed, stream=dump_stream)
     except ruamel.yaml.YAMLError:
         return None
-    if not parsed:
+    formatted_yaml = dump_stream.getvalue()
+
+    # Remove the YAML closing tag if added by `ruamel.yaml`
+    if formatted_yaml.endswith("\n...\n"):
+        formatted_yaml = formatted_yaml[:-4]
+
+    # Convert empty YAML to most concise form
+    if formatted_yaml == "null\n":
+        formatted_yaml = ""
+
+    if directive_options_style(context.options) == "colon":
+        colon_block = _as_colon_options(parsed, formatted_yaml)
+        if colon_block is not None:
+            return colon_block
+    return "---\n" + formatted_yaml + "---\n"
+
+
+def _as_colon_options(parsed: Any, formatted_yaml: str) -> str | None:
+    """Convert a dumped YAML options mapping to `:key: value` lines.
+
+    Returns None when the options cannot be represented in colon syntax
+    (non-mapping options, or nested/multi-line values), in which case
+    the YAML style must be kept.
+    """
+    if not formatted_yaml:
+        # Empty options are dropped in colon style.
         return ""
-    return "\n".join([f":{k}: {v}" for k, v in parsed.items()]) + "\n\n"
+    if not isinstance(parsed, Mapping):
+        return None
+    lines = formatted_yaml.splitlines()
+    if len(lines) != len(parsed):
+        # Multi-line values, nested structures or comments are present.
+        return None
+    colon_lines = []
+    for line in lines:
+        key = line.split(":", 1)[0]
+        if line != line.strip() or line.startswith("-") or ":" not in line or not key:
+            return None
+        colon_lines.append(":" + line)
+    return "\n".join(colon_lines) + "\n\n"
 
 
 def _would_parse_as_options(body: str) -> bool:

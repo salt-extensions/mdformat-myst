@@ -6,6 +6,12 @@ from typing import Any
 SYNTAX_TOGGLES = ("colon_fence", "deflist", "tasklist", "fieldlist")
 
 
+def directive_options_style(options: Mapping[str, Any]) -> str:
+    """Read the directive options style: "colon" (default) or "yaml"."""
+    plugin_conf = options.get("mdformat", {}).get("plugin", {}).get("myst", {})
+    return str(plugin_conf.get("directive_options", "colon"))
+
+
 def syntax_enabled(options: Mapping[str, Any], name: str) -> bool:
     """Read a mdformat-myst syntax extension toggle (default: enabled).
 

@@ -61,6 +61,33 @@ def test_toggle_disabled_via_toml(tmp_path):
     assert file_path.read_text() == COLON_FENCE_DISABLED_OUTPUT
 
 
+DIRECTIVE_INPUT = ":::{admonition} Title\n:class: tip\nBody text.\n:::\n"
+DIRECTIVE_COLON_OUTPUT = ":::{admonition} Title\n:class: tip\n\nBody text.\n:::\n"
+DIRECTIVE_YAML_OUTPUT = ":::{admonition} Title\n---\nclass: tip\n---\nBody text.\n:::\n"
+
+
+def test_directive_options_colon_by_default():
+    assert mdformat.text(DIRECTIVE_INPUT, extensions={"myst"}) == DIRECTIVE_COLON_OUTPUT
+
+
+def test_directive_options_yaml_via_api():
+    assert (
+        mdformat.text(
+            DIRECTIVE_INPUT,
+            extensions={"myst"},
+            options={"plugin": {"myst": {"directive_options": "yaml"}}},
+        )
+        == DIRECTIVE_YAML_OUTPUT
+    )
+
+
+def test_directive_options_yaml_via_cli(tmp_path):
+    file_path = tmp_path / "test_markdown.md"
+    file_path.write_text(DIRECTIVE_INPUT)
+    assert mdformat._cli.run(["--myst-directive-options", "yaml", str(file_path)]) == 0
+    assert file_path.read_text() == DIRECTIVE_YAML_OUTPUT
+
+
 def test_cli_flag_overrides_toml(tmp_path):
     """A CLI disable flag wins; an absent flag defers to TOML."""
     (tmp_path / ".mdformat.toml").write_text("[plugin.myst]\ndeflist = false\n")

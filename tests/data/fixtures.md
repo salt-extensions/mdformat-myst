@@ -917,3 +917,38 @@ para
 para
 \:not: a field
 .
+
+Directive option without a value
+.
+:::{toctree}
+:hidden:
+item
+:::
+.
+:::{toctree}
+:hidden:
+
+item
+:::
+.
+
+Directive options with complex values keep the YAML style
+.
+:::{dir}
+---
+items:
+  - a
+  - b
+---
+body
+:::
+.
+:::{dir}
+---
+items:
+  - a
+  - b
+---
+body
+:::
+.
