@@ -7,11 +7,12 @@ import textwrap
 from markdown_it import MarkdownIt
 import mdformat.plugins
 from mdformat.renderer import RenderContext, RenderTreeNode
+from mdit_py_plugins.colon_fence import colon_fence_plugin
 from mdit_py_plugins.dollarmath import dollarmath_plugin
 from mdit_py_plugins.myst_blocks import myst_block_plugin
 from mdit_py_plugins.myst_role import myst_role_plugin
 
-from mdformat_myst._conf import SYNTAX_TOGGLES
+from mdformat_myst._conf import SYNTAX_TOGGLES, syntax_enabled
 from mdformat_myst._directives import fence, render_fence_html
 
 _TARGET_PATTERN = re.compile(r"^\s*\(.+\)=\s*$")
@@ -54,6 +55,12 @@ def update_mdit(mdit: MarkdownIt) -> None:
 
     # Enable dollarmath markdown-it extension
     mdit.use(dollarmath_plugin)
+
+    if syntax_enabled(mdit.options, "colon_fence"):
+        mdit.use(colon_fence_plugin)
+        # Must come after `mdit.use` so it overrides the HTML render
+        # rule registered by the plugin (see the validation trick below).
+        mdit.add_render_rule("colon_fence", render_fence_html)
 
     # Trick `mdformat`s AST validation by removing HTML rendering of code
     # blocks and fences. Directives are parsed as code fences and we
@@ -124,6 +131,7 @@ def _render_children(node: RenderTreeNode, context: RenderContext) -> str:
 
 
 def _escape_paragraph(text: str, node: RenderTreeNode, context: RenderContext) -> str:
+    colon_fence_enabled = syntax_enabled(context.options, "colon_fence")
     lines = text.split("\n")
 
     for i in range(len(lines)):
@@ -140,6 +148,10 @@ def _escape_paragraph(text: str, node: RenderTreeNode, context: RenderContext) -
         # Escape lines that look like targets
         if _TARGET_PATTERN.search(lines[i]):
             lines[i] = lines[i].replace("(", "\\(", 1)
+
+        # Three or more leading ":" chars open a colon fence. Escape them.
+        if colon_fence_enabled and lines[i].startswith(":::"):
+            lines[i] = f"\\{lines[i]}"
 
     return "\n".join(lines)
 
@@ -164,5 +176,6 @@ RENDERERS = {
     "math_block_label": _math_block_label_renderer,
     "math_block": _math_block_renderer,
     "fence": fence,
+    "colon_fence": fence,
 }
 POSTPROCESSORS = {"paragraph": _escape_paragraph, "text": _escape_text}
