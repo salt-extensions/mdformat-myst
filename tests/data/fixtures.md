@@ -780,3 +780,59 @@ foo
 foo
 \: not a definition
 .
+
+Task list
+.
+- [ ] not done
+- [x] done
+.
+- [ ] not done
+- [x] done
+.
+
+Task list, checkmark normalized to lowercase
+.
+- [X] done
+.
+- [x] done
+.
+
+Task list nested in ordered list
+.
+1. [x] top
+   - [ ] nested
+   - [x] nested done
+.
+1. [x] top
+   - [ ] nested
+   - [x] nested done
+.
+
+Task list item with continuation paragraph
+.
+- [ ] task
+
+  second paragraph with [x] literal
+.
+- [ ] task
+
+  second paragraph with [x] literal
+.
+
+Task list inside colon fenced directive
+.
+:::{note}
+- [ ] todo in note
+:::
+.
+:::{note}
+- [ ] todo in note
+:::
+.
+
+Literal bracket-x list item is escaped
+.
+- \[x\] not a task
+.
+- \[x\] not a task
+.

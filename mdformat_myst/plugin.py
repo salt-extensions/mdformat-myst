@@ -14,6 +14,11 @@ from mdit_py_plugins.myst_role import myst_role_plugin
 
 from mdformat_myst._conf import SYNTAX_TOGGLES, syntax_enabled
 from mdformat_myst._directives import fence, render_fence_html
+from mdformat_myst._tasklists import (
+    escape_tasklist_paragraph,
+    task_checkbox_renderer,
+    update_mdit_tasklists,
+)
 
 _TARGET_PATTERN = re.compile(r"^\s*\(.+\)=\s*$")
 _ROLE_NAME_PATTERN = re.compile(r"({[a-zA-Z0-9_\-+:]+})")
@@ -59,6 +64,9 @@ def update_mdit(mdit: MarkdownIt) -> None:
 
     # Enable dollarmath markdown-it extension
     mdit.use(dollarmath_plugin)
+
+    if syntax_enabled(mdit.options, "tasklist"):
+        update_mdit_tasklists(mdit)
 
     if syntax_enabled(mdit.options, "colon_fence"):
         mdit.use(colon_fence_plugin)
@@ -157,7 +165,9 @@ def _escape_paragraph(text: str, node: RenderTreeNode, context: RenderContext) -
         if colon_fence_enabled and lines[i].startswith(":::"):
             lines[i] = f"\\{lines[i]}"
 
-    return "\n".join(lines)
+    text = "\n".join(lines)
+    text = escape_tasklist_paragraph(text, node, context)
+    return text
 
 
 def _escape_text(text: str, node: RenderTreeNode, context: RenderContext) -> str:
@@ -181,5 +191,6 @@ RENDERERS = {
     "math_block": _math_block_renderer,
     "fence": fence,
     "colon_fence": fence,
+    "myst_task_checkbox": task_checkbox_renderer,
 }
 POSTPROCESSORS = {"paragraph": _escape_paragraph, "text": _escape_text}
