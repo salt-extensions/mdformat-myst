@@ -14,6 +14,13 @@ from mdit_py_plugins.myst_role import myst_role_plugin
 
 from mdformat_myst._conf import SYNTAX_TOGGLES, syntax_enabled
 from mdformat_myst._directives import fence, render_fence_html
+from mdformat_myst._fieldlist import (
+    escape_fieldlist_paragraph,
+    render_field_list,
+    render_fieldlist_body,
+    render_fieldlist_name,
+    update_mdit_fieldlist,
+)
 from mdformat_myst._tasklists import (
     escape_tasklist_paragraph,
     task_checkbox_renderer,
@@ -67,6 +74,9 @@ def update_mdit(mdit: MarkdownIt) -> None:
 
     if syntax_enabled(mdit.options, "tasklist"):
         update_mdit_tasklists(mdit)
+
+    if syntax_enabled(mdit.options, "fieldlist"):
+        update_mdit_fieldlist(mdit)
 
     if syntax_enabled(mdit.options, "colon_fence"):
         mdit.use(colon_fence_plugin)
@@ -167,6 +177,7 @@ def _escape_paragraph(text: str, node: RenderTreeNode, context: RenderContext) -
 
     text = "\n".join(lines)
     text = escape_tasklist_paragraph(text, node, context)
+    text = escape_fieldlist_paragraph(text, node, context)
     return text
 
 
@@ -192,5 +203,8 @@ RENDERERS = {
     "fence": fence,
     "colon_fence": fence,
     "myst_task_checkbox": task_checkbox_renderer,
+    "field_list": render_field_list,
+    "fieldlist_name": render_fieldlist_name,
+    "fieldlist_body": render_fieldlist_body,
 }
 POSTPROCESSORS = {"paragraph": _escape_paragraph, "text": _escape_text}

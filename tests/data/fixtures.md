@@ -836,3 +836,95 @@ Literal bracket-x list item is escaped
 .
 - \[x\] not a task
 .
+
+Field list, simple
+.
+:author: Jane Doe
+:date: 2026-10-21
+.
+:author: Jane Doe
+:date: 2026-10-21
+.
+
+Field list, empty body
+.
+:orphan:
+.
+:orphan:
+.
+
+Field list, multiline and multi-paragraph body
+.
+:abstract: First line
+   continued line
+
+   second paragraph
+.
+:abstract: First line
+  continued line
+
+  second paragraph
+.
+
+Field list, body indented more than first line
+.
+:name:
+      Deeply indented body
+.
+:name: Deeply indented body
+.
+
+Field list, inline markup in name
+.
+:*emphasized* name: body
+.
+:*emphasized* name: body
+.
+
+Field list, non-paragraph body
+.
+:code:
+  ```
+  literal
+  ```
+.
+:code:
+  ```
+  literal
+  ```
+.
+
+Field list inside colon fenced directive
+.
+:::{py:function} foo
+
+:param x: a parameter
+:::
+.
+:::{py:function} foo
+
+:param x: a parameter
+:::
+.
+
+Colon fenced directive options are kept distinct from a field list body
+.
+:::{py:function} foo
+:param x: a parameter
+:::
+.
+:::{py:function} foo
+---
+param x: a parameter
+---
+:::
+.
+
+Paragraph line resembling a field marker is escaped
+.
+para
+\:not: a field
+.
+para
+\:not: a field
+.
