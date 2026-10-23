@@ -1065,3 +1065,23 @@ See [docs][inner-ref].
 
 [inner-ref]: https://inner.example
 .
+
+Directive option with a long value stays in colon syntax
+.
+```{code-block} yaml
+:caption: e.g. `/etc/salt/minion.d/github.yml` or `/srv/pillar/github.sls` with associated mapping in `top.sls`
+# Requires a corresponding SDB profile in the minion configuration, see above
+github:
+  token: sdb://osenv/GITHUB_TOKEN
+  owner: my_organization
+```
+.
+```{code-block} yaml
+:caption: e.g. `/etc/salt/minion.d/github.yml` or `/srv/pillar/github.sls` with associated mapping in `top.sls`
+
+# Requires a corresponding SDB profile in the minion configuration, see above
+github:
+  token: sdb://osenv/GITHUB_TOKEN
+  owner: my_organization
+```
+.

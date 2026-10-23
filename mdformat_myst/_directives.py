@@ -16,6 +16,10 @@ from mdformat_myst._conf import directive_options_style
 
 yaml = ruamel.yaml.YAML()
 yaml.indent(mapping=2, sequence=4, offset=2)
+# Never fold long scalars onto multiple lines: folding would make long
+# option values appear unrepresentable in colon syntax, and mdformat
+# never wraps fence contents anyway.
+yaml.width = 100_000
 
 # Directives whose body is not Markdown. Their content must be kept
 # verbatim instead of being recursively formatted as Markdown.
