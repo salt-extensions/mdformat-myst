@@ -77,6 +77,21 @@ tasklist = false
 fieldlist = false
 ```
 
+### Literal directive bodies
+
+Colon fenced directive bodies are recursively formatted as Markdown, except
+for well-known directives whose body is code, RST or another non-Markdown
+format (`{eval-rst}`, `{code-block}`, `{code-cell}`, `{toctree}`,
+`{csv-table}`, the autodoc family, ...). To keep the bodies of additional
+(e.g. custom) directives verbatim, use
+`mdformat --myst-literal-directives my-directive,other-directive`, or in
+`.mdformat.toml`:
+
+```toml
+[plugin.myst]
+literal_directives = ["my-directive", "other-directive"]
+```
+
 ### Directive option style
 
 To keep formatting directive options as `---`-delimited YAML blocks instead of

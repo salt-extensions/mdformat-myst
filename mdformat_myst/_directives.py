@@ -12,7 +12,7 @@ import mdformat.plugins
 from mdformat.renderer import LOGGER, MDRenderer, RenderContext, RenderTreeNode
 import ruamel.yaml
 
-from mdformat_myst._conf import directive_options_style
+from mdformat_myst._conf import directive_options_style, literal_directives
 
 yaml = ruamel.yaml.YAML()
 yaml.indent(mapping=2, sequence=4, offset=2)
@@ -25,6 +25,16 @@ yaml.width = 100_000
 # verbatim instead of being recursively formatted as Markdown.
 _NON_MARKDOWN_DIRECTIVES = frozenset(
     {
+        "{autoattribute}",
+        "{autoclass}",
+        "{autodata}",
+        "{autodecorator}",
+        "{autoexception}",
+        "{autofunction}",
+        "{automethod}",
+        "{automodule}",
+        "{autoproperty}",
+        "{autosummary}",
         "{code}",
         "{code-block}",
         "{code-cell}",
@@ -111,9 +121,10 @@ def _fence_body(
         mark_refs_used_in_directive(unformatted_body, context)
         # Only colon fenced directive bodies are Markdown. Backtick
         # fences signal literal content, as do a number of well-known
-        # directives whose body is code, RST or similar.
-        markdown_body = (
-            node.type == "colon_fence" and lang not in _NON_MARKDOWN_DIRECTIVES
+        # (and user-configured) directives whose body is code, RST or
+        # similar.
+        markdown_body = node.type == "colon_fence" and not _is_literal_directive(
+            lang, context
         )
         return format_directive_content(
             unformatted_body, context, markdown_body=markdown_body
@@ -132,6 +143,13 @@ def _fence_body(
                 f"(line {node.map[0] + 1} before formatting)"
             )
     return unformatted_body
+
+
+def _is_literal_directive(lang: str, context: RenderContext) -> bool:
+    """Return True if the body of a `{lang}` directive is not Markdown."""
+    if lang in _NON_MARKDOWN_DIRECTIVES:
+        return True
+    return lang[1:-1] in literal_directives(context.options)
 
 
 def _is_myst_directive(info_str: str) -> bool:

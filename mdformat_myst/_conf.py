@@ -12,6 +12,18 @@ def directive_options_style(options: Mapping[str, Any]) -> str:
     return str(plugin_conf.get("directive_options", "colon"))
 
 
+def literal_directives(options: Mapping[str, Any]) -> frozenset[str]:
+    """Read extra directive names whose body must be kept verbatim.
+
+    Accepts a list (TOML) or a comma-separated string (CLI).
+    """
+    plugin_conf = options.get("mdformat", {}).get("plugin", {}).get("myst", {})
+    conf = plugin_conf.get("literal_directives", [])
+    if isinstance(conf, str):
+        conf = conf.split(",")
+    return frozenset(name.strip() for name in conf if name.strip())
+
+
 def syntax_enabled(options: Mapping[str, Any], name: str) -> bool:
     """Read a mdformat-myst syntax extension toggle (default: enabled).
 

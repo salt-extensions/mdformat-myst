@@ -1085,3 +1085,20 @@ github:
   owner: my_organization
 ```
 .
+
+Autodoc directive body is left untouched
+.
+:::{automodule} mymodule
+:members:
+
+.. rubric:: Details
+   with indented RST
+:::
+.
+:::{automodule} mymodule
+:members:
+
+.. rubric:: Details
+   with indented RST
+:::
+.

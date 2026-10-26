@@ -45,6 +45,16 @@ def add_cli_argument_group(group: argparse._ArgumentGroup) -> None:
             help=f"disable the MyST '{name}' syntax extension",
         )
     group.add_argument(
+        "--myst-literal-directives",
+        # `None` means "not set on the CLI": fall back to the
+        # `[plugin.myst]` TOML section or the default (empty).
+        default=None,
+        dest="literal_directives",
+        metavar="NAME[,NAME...]",
+        help="comma-separated additional directives whose body is not "
+        "Markdown and must be kept verbatim",
+    )
+    group.add_argument(
         "--myst-directive-options",
         choices=("colon", "yaml"),
         # `None` means "not set on the CLI": fall back to the
