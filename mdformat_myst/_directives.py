@@ -28,12 +28,14 @@ _NON_MARKDOWN_DIRECTIVES = frozenset(
         "{code}",
         "{code-block}",
         "{code-cell}",
+        "{csv-table}",
         "{eval-rst}",
         "{include}",
         "{literalinclude}",
         "{math}",
         "{mermaid}",
         "{raw}",
+        "{toctree}",
     }
 )
 
